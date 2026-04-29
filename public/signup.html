@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OIDC Auth - Create Account</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="page page-center">
+      <section class="auth-shell card form-card">
+        <div class="card-body stack" style="gap: 32px">
+          <div class="inline" style="justify-content: center">
+            <span class="brand-mark">O</span>
+            <span class="brand-copy">OIDC Auth</span>
+          </div>
+
+          <div class="stack centered" style="gap: 12px">
+            <h1 class="form-title">Create account</h1>
+            <p class="description lead" id="signupInfo">
+              Sign up to continue with OIDC Auth.
+            </p>
+          </div>
+
+          <form class="stack" id="signupForm" enctype="multipart/form-data" novalidate>
+            <div class="field">
+              <label for="fullName">Full name</label>
+              <input
+                class="input"
+                id="fullName"
+                name="fullName"
+                placeholder="Jane Doe"
+                autocomplete="name"
+                required
+              />
+            </div>
+
+            <div class="field">
+              <label for="email">Email address</label>
+              <input
+                class="input"
+                id="email"
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                autocomplete="email"
+                required
+              />
+            </div>
+
+            <div class="field">
+              <label for="password">Password</label>
+              <input
+                class="input"
+                id="password"
+                name="password"
+                type="password"
+                minlength="8"
+                placeholder="Minimum 8 characters"
+                autocomplete="new-password"
+                required
+              />
+            </div>
+
+            <div class="field">
+              <label for="confirmPassword">Confirm password</label>
+              <input
+                class="input"
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                minlength="8"
+                placeholder="Repeat password"
+                autocomplete="new-password"
+                required
+              />
+            </div>
+
+            <div class="field">
+              <label for="profileImage">Profile photo (optional)</label>
+              <input class="input" id="profileImage" name="profileImage" type="file" accept="image/*" />
+            </div>
+
+            <button class="button button-primary full-width" type="submit">
+              Create account
+            </button>
+          </form>
+
+          <div class="error" id="error"></div>
+
+          <div class="splitter">OR</div>
+
+          <p class="description centered">
+            Already have an account?
+            <a id="loginLink" href="/authenticate.html"><strong>Sign in</strong></a>
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <script type="module">
+      import { wireAsyncForm } from "/lib/forms.js";
+      import { apiRequest } from "/lib/api.js";
+
+      const params = new URLSearchParams(window.location.search);
+      const loginLink = document.getElementById("loginLink");
+      const signupInfo = document.getElementById("signupInfo");
+      loginLink.href = `/authenticate.html?${params.toString()}`;
+
+      const clientName = params.get("client_name") || params.get("client_id") || "this app";
+      signupInfo.textContent = `Sign up to continue with ${clientName}.`;
+
+      const splitFullName = (value) => {
+        const cleaned = value.trim().replace(/\s+/g, " ");
+        if (!cleaned) {
+          return { firstName: "", lastName: "" };
+        }
+
+        const parts = cleaned.split(" ");
+        if (parts.length === 1) {
+          return { firstName: parts[0], lastName: parts[0] };
+        }
+
+        return {
+          firstName: parts.shift(),
+          lastName: parts.join(" "),
+        };
+      };
+
+      const form = document.getElementById("signupForm");
+      wireAsyncForm({
+        form,
+        errorId: "error",
+        onSubmit: async () => {
+          if (form.password.value !== form.confirmPassword.value) {
+            throw new Error("Passwords do not match.");
+          }
+
+          const { firstName, lastName } = splitFullName(form.fullName.value);
+
+          if (!firstName || !lastName) {
+            throw new Error("Please enter your full name.");
+          }
+
+          const formData = new FormData();
+          formData.set("firstName", firstName);
+          formData.set("lastName", lastName);
+          formData.set("email", form.email.value.trim());
+          formData.set("password", form.password.value);
+          formData.set("client_id", params.get("client_id") || "");
+          formData.set("redirect_uri", params.get("redirect_uri") || "");
+          formData.set("response_type", params.get("response_type") || "code");
+          formData.set("scope", params.get("scope") || "openid profile email");
+          formData.set("state", params.get("state") || "");
+          formData.set("nonce", params.get("nonce") || "");
+          formData.set("code_challenge", params.get("code_challenge") || "");
+          formData.set(
+            "code_challenge_method",
+            params.get("code_challenge_method") || "S256",
+          );
+
+          const profileFile = form.profileImage.files?.[0];
+          if (profileFile) {
+            formData.set("profileImage", profileFile);
+          }
+
+          const data = await apiRequest("/accounts/register", {
+            method: "POST",
+            body: formData,
+          });
+          window.location.href = data.data.redirect_to;
+        },
+      });
+    </script>
+  </body>
+</html>

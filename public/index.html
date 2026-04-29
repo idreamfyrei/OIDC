@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OIDC Auth</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <div class="site-shell stack" style="gap: 28px">
+        <header class="topbar">
+          <a class="brand" href="/">
+            <span class="brand-mark">O</span>
+            <span class="brand-copy">OIDC Auth</span>
+          </a>
+
+          <nav class="topnav" aria-label="Primary">
+            <a class="nav-link active" href="/">Home</a>
+            <a class="nav-link" href="/client-register.html">Register app</a>
+          </nav>
+        </header>
+
+        <section class="card hero-card">
+          <div class="card-body stack" style="gap: 28px">
+            <div class="hero-grid">
+              <div class="stack" style="gap: 26px">
+                <p class="eyebrow" id="heroEyebrow">Educational OIDC demo</p>
+                <h1 class="title" id="heroTitle">OIDC Auth</h1>
+                <p class="description lead" id="heroDescription">
+                  Learn how an OIDC identity provider works with a clean,
+                  browser-friendly web session layered on top.
+                </p>
+
+                <div class="inline" id="guestActions">
+                  <a class="button button-primary" href="/web/login">Login</a>
+                  <a class="button button-secondary" href="/web/signup">Register user</a>
+                  <a class="button button-secondary" href="/client-register.html">Register app</a>
+                </div>
+
+                <section class="notice stack" style="gap: 10px">
+                  <strong>Proof of concept</strong>
+                  <p class="muted">
+                    This project is for educational purposes and learning OIDC
+                    and OAuth 2.0 internals. It is not positioned as
+                    production-ready identity infrastructure.
+                  </p>
+                </section>
+              </div>
+
+              <div class="stack" id="guestColumn">
+                <section class="panel stack">
+                  <h2 style="margin: 0">Get started</h2>
+                  <p class="muted">
+                    Choose what you want to test in this OIDC proof of concept.
+                  </p>
+                  <div class="summary-grid">
+                    <div class="notice">
+                      <strong>Register user</strong>
+                      <p class="muted">
+                        Create a local user account and land back on your
+                        profile after the BFF login flow completes.
+                      </p>
+                    </div>
+                    <div class="notice">
+                      <strong>Register app</strong>
+                      <p class="muted">
+                        Add a website name, website URL, and redirect URL to get
+                        a client ID for your demo client.
+                      </p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="sidebar-grid">
+          <article class="panel stack">
+            <h2 style="margin: 0">How this frontend works</h2>
+            <p class="description">
+              The browser only keeps an HttpOnly session cookie. The backend
+              stores the OAuth tokens and exposes a small BFF surface through
+              <span class="code">/web/me</span>,
+              <span class="code">/web/apps</span>, and
+              <span class="code">/web/logout</span>.
+            </p>
+
+            <div class="summary-grid">
+              <div class="notice">
+                <strong>Login</strong>
+                <p class="muted">
+                  Starts a server-managed login flow and keeps tokens on the
+                  backend instead of in browser JavaScript.
+                </p>
+              </div>
+              <div class="notice">
+                <strong>Register app</strong>
+                <p class="muted">
+                  Shows client ID by default and only displays a client secret
+                  if the backend actually returns one.
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <aside class="panel stack">
+            <h2 style="margin: 0">Quick actions</h2>
+            <a class="button button-secondary full-width" href="/client-register.html">
+              Register your app
+            </a>
+            <a
+              class="button button-secondary full-width"
+              href="/.well-known/openid-configuration"
+            >
+              Open discovery JSON
+            </a>
+            <button
+              class="button button-secondary full-width"
+              id="refreshSession"
+              type="button"
+              disabled
+            >
+              Refresh web session
+            </button>
+          </aside>
+        </section>
+
+        <footer class="footer">Made for learning how OIDC flows work under the hood.</footer>
+      </div>
+    </main>
+
+    <script type="module">
+      import { apiPost } from "/lib/api.js";
+
+      document.getElementById("refreshSession").addEventListener("click", async () => {
+        try {
+          await apiPost("/web/refresh");
+        } catch (error) {
+          console.error(error);
+        }
+      });
+    </script>
+  </body>
+</html>

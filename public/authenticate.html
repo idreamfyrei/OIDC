@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OIDC Auth - Sign In</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="page page-center">
+      <section class="auth-shell card form-card">
+        <div class="card-body stack" style="gap: 32px">
+          <div class="inline" style="justify-content: center">
+            <span class="brand-mark">O</span>
+            <span class="brand-copy">OIDC Auth</span>
+          </div>
+
+          <div class="stack centered" style="gap: 12px">
+            <h1 class="form-title">Sign in</h1>
+            <p class="description lead" id="requestInfo">
+              Continue to send an authorization code back to the requesting app.
+            </p>
+          </div>
+
+          <form class="stack" id="loginForm" novalidate>
+            <div class="field">
+              <label for="email">Email address</label>
+              <input
+                class="input"
+                id="email"
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                autocomplete="email"
+                required
+              />
+            </div>
+
+            <div class="field">
+              <label for="password">Password</label>
+              <input
+                class="input"
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Minimum 8 characters"
+                autocomplete="current-password"
+                required
+              />
+            </div>
+
+            <button class="button button-primary full-width" type="submit">
+              Continue
+            </button>
+          </form>
+
+          <div class="error" id="error"></div>
+
+          <div class="splitter">OR</div>
+
+          <p class="description centered">
+            Don't have an account?
+            <a id="signupLink" href="/signup.html"><strong>Sign up</strong></a>
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <script type="module">
+      import { apiRequest } from "/lib/api.js";
+      import { wireAsyncForm } from "/lib/forms.js";
+
+      const params = new URLSearchParams(window.location.search);
+      const signupLink = document.getElementById("signupLink");
+      const requestInfo = document.getElementById("requestInfo");
+
+      signupLink.href = `/signup.html?${params.toString()}`;
+      requestInfo.textContent = `${params.get("client_name") || params.get("client_id") || "This app"} wants to continue with ${params.get("scope") || "openid profile email"}.`;
+
+      const form = document.getElementById("loginForm");
+      wireAsyncForm({
+        form,
+        errorId: "error",
+        onSubmit: async () => {
+          const payload = {
+            email: form.email.value.trim(),
+            password: form.password.value,
+            client_id: params.get("client_id"),
+            redirect_uri: params.get("redirect_uri"),
+            response_type: params.get("response_type"),
+            scope: params.get("scope"),
+            state: params.get("state"),
+            nonce: params.get("nonce"),
+            code_challenge: params.get("code_challenge"),
+            code_challenge_method: params.get("code_challenge_method"),
+          };
+
+          const data = await apiRequest("/auth/sign-in", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+          window.location.href = data.data.redirect_to;
+        },
+      });
+    </script>
+  </body>
+</html>

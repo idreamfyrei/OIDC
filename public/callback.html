@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Signing you in...</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="container card" style="max-width: 920px">
+        <div class="card-body stack">
+          <h1 class="section-title">Signing you in...</h1>
+          <p class="description" id="output">
+            Finalizing your login. You will be redirected automatically.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const query = window.location.search || "";
+      window.location.replace(`/web/login/callback${query}`);
+    </script>
+  </body>
+</html>

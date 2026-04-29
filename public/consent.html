@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OIDC Auth - Consent</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="page page-center">
+      <section class="auth-shell card form-card">
+        <div class="card-body stack" style="gap: 28px">
+          <div class="inline" style="justify-content: center">
+            <span class="brand-mark">O</span>
+            <span class="brand-copy">OIDC Auth</span>
+          </div>
+
+          <div class="stack centered" style="gap: 12px">
+            <p class="eyebrow">Consent</p>
+            <h1 class="form-title" id="title">App wants access</h1>
+            <p class="description lead" id="subtitle">
+              Review the requested access before continuing.
+            </p>
+          </div>
+
+          <section class="panel stack">
+            <div>
+              <p class="label">Client</p>
+              <p class="description" id="clientName"></p>
+            </div>
+            <div>
+              <p class="label">Redirect URI</p>
+              <p class="description mono output" id="redirectUri"></p>
+            </div>
+            <div>
+              <p class="label">Requested scopes</p>
+              <div class="inline" id="scopeList"></div>
+            </div>
+          </section>
+
+          <div class="stack">
+            <a class="button button-primary full-width" id="signInLink" href="/authenticate.html">
+              Continue to sign in
+            </a>
+            <a class="button button-secondary full-width" id="signUpLink" href="/signup.html">
+              Create account first
+            </a>
+            <a class="button button-ghost full-width" href="/">Cancel</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const clientName =
+        params.get("client_name") || params.get("client_id") || "Unknown client";
+      const query = params.toString();
+
+      document.getElementById("title").textContent =
+        `${clientName} wants to access your account`;
+      document.getElementById("subtitle").textContent =
+        "Review the app, redirect URI, and scopes before you continue.";
+      document.getElementById("clientName").textContent = clientName;
+      document.getElementById("redirectUri").textContent =
+        params.get("redirect_uri") || "";
+      document.getElementById("signInLink").href = `/authenticate.html?${query}`;
+      document.getElementById("signUpLink").href = `/signup.html?${query}`;
+
+      const scopeList = document.getElementById("scopeList");
+      const scopes = (params.get("scope") || "").split(" ").filter(Boolean);
+      scopes.forEach((scope) => {
+        const pill = document.createElement("span");
+        pill.className = "pill";
+        pill.textContent = scope;
+        scopeList.appendChild(pill);
+      });
+    </script>
+  </body>
+</html>

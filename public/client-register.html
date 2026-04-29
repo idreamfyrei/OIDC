@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OIDC Auth - Register App</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="page page-center">
+      <section class="auth-shell card form-card">
+        <div class="card-body stack" style="gap: 32px">
+          <div class="inline" style="justify-content: center">
+            <span class="brand-mark">O</span>
+            <span class="brand-copy">OIDC Auth</span>
+          </div>
+
+          <div class="stack centered" style="gap: 12px" id="registerIntro">
+            <h1 class="form-title">Register your app</h1>
+            <p class="description lead">
+              Register an app using website name, website URL, and redirect URL.
+            </p>
+          </div>
+
+          <form class="stack" id="clientForm" novalidate>
+            <div class="field">
+              <label for="clientName">Application name</label>
+              <input class="input" id="clientName" required placeholder="My Awesome App" />
+            </div>
+
+            <div class="field">
+              <label for="websiteUrl">Website URL</label>
+              <input
+                class="input"
+                id="websiteUrl"
+                type="url"
+                placeholder="https://myapp.com"
+              />
+              <p class="helper">Homepage stored with the client for your profile view.</p>
+            </div>
+
+            <div class="field">
+              <label for="redirectUri">Redirect URI</label>
+              <input
+                class="input"
+                id="redirectUri"
+                type="url"
+                required
+                placeholder="https://myapp.com/auth/callback"
+              />
+              <p class="helper">Where users are sent after authorization.</p>
+            </div>
+
+            <div class="field">
+              <label for="clientId">Client ID override (optional)</label>
+              <input
+                class="input"
+                id="clientId"
+                placeholder="Leave blank to auto-generate"
+              />
+            </div>
+
+            <button class="button button-primary full-width" type="submit">
+              Register application
+            </button>
+          </form>
+
+          <div class="error" id="error"></div>
+
+          <div class="splitter">OR</div>
+
+          <p class="description centered">
+            Are you a user?
+            <a href="/"><strong>Go to account area</strong></a>
+          </p>
+
+          <section class="stack hidden" id="resultCard" style="gap: 22px">
+            <div class="stack centered" style="gap: 10px">
+              <h2 class="form-title" style="font-size: clamp(2.4rem, 4vw, 3.5rem)">App registered</h2>
+              <p class="success">Your application has been registered.</p>
+            </div>
+
+            <div class="field">
+              <label>Application name</label>
+              <div class="value-box mono" id="resultName"></div>
+            </div>
+
+            <div class="field">
+              <label>Client ID</label>
+              <div class="copy-row">
+                <div class="value-box mono output" id="resultClientId"></div>
+                <button class="button button-primary" data-copy-target="resultClientId" type="button">
+                  Copy
+                </button>
+              </div>
+            </div>
+
+            <div class="field hidden" id="clientSecretField">
+              <label>Client secret</label>
+              <div class="copy-row">
+                <div class="value-box mono output" id="resultClientSecret"></div>
+                <button
+                  class="button button-primary"
+                  data-copy-target="resultClientSecret"
+                  type="button"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Auth method</label>
+              <div class="value-box mono" id="resultAuthMethod"></div>
+            </div>
+
+            <div class="field">
+              <label>Login redirect URL</label>
+              <div class="copy-row">
+                <div class="value-box mono output" id="resultAuthorizeUrl"></div>
+                <button class="button button-primary" data-copy-target="resultAuthorizeUrl" type="button">
+                  Copy
+                </button>
+              </div>
+              <p class="helper">
+                Replace the placeholder values for <span class="code">state</span>,
+                <span class="code">nonce</span>, and PKCE values before using this URL in a real client.
+              </p>
+            </div>
+
+            <div class="warning-card">
+              A client secret is only shown when the backend actually issues one.
+            </div>
+
+            <div class="splitter">NEXT</div>
+
+            <a class="button button-secondary full-width" href="/client-register.html">
+              Register another app
+            </a>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script type="module">
+      import { apiRequest } from "/lib/api.js";
+
+      const form = document.getElementById("clientForm");
+      const error = document.getElementById("error");
+
+      const buildAuthorizeUrl = ({ clientId, redirectUri }) => {
+        const url = new URL("/oauth/authorize", window.location.origin);
+        url.searchParams.set("client_id", clientId);
+        url.searchParams.set("redirect_uri", redirectUri);
+        url.searchParams.set("response_type", "code");
+        url.searchParams.set("scope", "openid profile email");
+        url.searchParams.set("state", "STATE_PLACEHOLDER");
+        url.searchParams.set("nonce", "NONCE_PLACEHOLDER");
+        url.searchParams.set(
+          "code_challenge",
+          "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-",
+        );
+        url.searchParams.set("code_challenge_method", "S256");
+        return url.toString();
+      };
+
+      const copyText = async (elementId) => {
+        const value = document.getElementById(elementId)?.textContent || "";
+        await navigator.clipboard.writeText(value);
+      };
+
+      document.addEventListener("click", async (event) => {
+        const button = event.target.closest("[data-copy-target]");
+        if (!button) return;
+
+        try {
+          await copyText(button.getAttribute("data-copy-target"));
+          button.textContent = "Copied";
+          window.setTimeout(() => {
+            button.textContent = "Copy";
+          }, 1000);
+        } catch {
+          button.textContent = "Failed";
+        }
+      });
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        error.style.display = "none";
+        error.textContent = "";
+
+        const payload = {
+          clientName: document.getElementById("clientName").value.trim(),
+          websiteUrl: document.getElementById("websiteUrl").value.trim(),
+          clientId: document.getElementById("clientId").value.trim() || undefined,
+          applicationType: "web",
+          tokenEndpointAuthMethod: "none",
+          redirectUris: [document.getElementById("redirectUri").value.trim()],
+        };
+
+        try {
+          const result = await apiRequest("/clients/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const client = result.data;
+          sessionStorage.setItem(
+            "oidc_auth_last_registered_app",
+            JSON.stringify({
+              client_name: client.client_name,
+              client_id: client.client_id,
+              client_secret: client.client_secret || null,
+              token_endpoint_auth_method: client.token_endpoint_auth_method,
+              authorize_url: buildAuthorizeUrl({
+                clientId: client.client_id,
+                redirectUri: client.redirect_uris[0],
+              }),
+            }),
+          );
+          window.location.href = "/profile.html";
+        } catch (requestError) {
+          error.textContent = requestError.message;
+          error.style.display = "block";
+        }
+      });
+    </script>
+  </body>
+</html>
