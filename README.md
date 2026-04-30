@@ -142,7 +142,7 @@ In words:
 
 ## Backend For Frontend Demo Flow
 
-<img width="517" height="655" alt="image" src="https://github.com/user-attachments/assets/0becd953-3e9d-4e02-ba57-57fead3270df" />
+<img width="517" height="655" alt="image" src="https://github.com/user-attachments/assets/13711ee8-a681-4932-8d06-8f65b363991f" />
 
 In words:
 
