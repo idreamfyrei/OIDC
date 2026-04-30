@@ -20,6 +20,8 @@ export const config = {
   port: Number(process.env.PORT) || 3000,
   issuer,
   keyId: process.env.KEY_ID || "key-1",
+  privateKey: process.env.PRIVATE_KEY || "",
+  publicKey: process.env.PUBLIC_KEY || "",
   privateKeyPath: process.env.PRIVATE_KEY_PATH || path.join(certDirectory, "private-key.pem"),
   publicKeyPath: process.env.PUBLIC_KEY_PATH || path.join(certDirectory, "public-key.pub"),
   accessTokenTtlSeconds: Number(process.env.ACCESS_TOKEN_TTL_SECONDS) || 3600,

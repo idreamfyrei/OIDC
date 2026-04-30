@@ -12,9 +12,13 @@ const keyCache = {
 
 const readKey = async (filePath) => fs.readFile(filePath, "utf8");
 
+const normalizePem = (value) => value.replace(/\\n/g, "\n");
+
 const getPrivateKey = async () => {
   if (!keyCache.privateKey) {
-    keyCache.privateKey = await readKey(config.privateKeyPath);
+    keyCache.privateKey = config.privateKey
+      ? normalizePem(config.privateKey)
+      : await readKey(config.privateKeyPath);
   }
 
   return keyCache.privateKey;
@@ -22,7 +26,9 @@ const getPrivateKey = async () => {
 
 const getPublicKey = async () => {
   if (!keyCache.publicKey) {
-    keyCache.publicKey = await readKey(config.publicKeyPath);
+    keyCache.publicKey = config.publicKey
+      ? normalizePem(config.publicKey)
+      : await readKey(config.publicKeyPath);
   }
 
   return keyCache.publicKey;
