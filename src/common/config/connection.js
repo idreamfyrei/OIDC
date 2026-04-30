@@ -6,7 +6,30 @@ const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "../../..");
 const certDirectory = path.join(projectRoot, "cert");
 
-const issuer = process.env.ISSUER || `http://localhost:${process.env.PORT || 3000}`;
+const getPublicRailwayUrl = () => {
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+  }
+
+  if (process.env.RAILWAY_STATIC_URL) {
+    return process.env.RAILWAY_STATIC_URL.startsWith("http")
+      ? process.env.RAILWAY_STATIC_URL
+      : `https://${process.env.RAILWAY_STATIC_URL}`;
+  }
+
+  return "";
+};
+
+const issuer =
+  process.env.ISSUER ||
+  getPublicRailwayUrl() ||
+  `http://localhost:${process.env.PORT || 3000}`;
+
+if (issuer.includes(".railway.internal")) {
+  throw new Error(
+    "ISSUER must be a public URL. Use your Railway public domain, not a .railway.internal hostname.",
+  );
+}
 
 const splitList = (value) =>
   (value || "")

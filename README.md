@@ -487,6 +487,8 @@ PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----
 PUBLIC_KEY=-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----
 ```
 
+Use Railway's public app domain for `ISSUER` and `WEB_BFF_REDIRECT_URI`. Do not use a `*.railway.internal` hostname; that hostname is only reachable from other Railway services and will fail in a user's browser with `DNS_PROBE_FINISHED_NXDOMAIN`.
+
 4. Generate the RSA keys locally with `./key-gen.sh`, then paste the private and public PEM values into Railway as `PRIVATE_KEY` and `PUBLIC_KEY`. Keep the same keys across deploys so existing tokens continue to verify.
 5. Set Railway's start command to `pnpm start` if it does not detect it automatically.
 6. Run database migrations against the Railway database:
