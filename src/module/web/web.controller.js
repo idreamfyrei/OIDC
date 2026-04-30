@@ -49,7 +49,9 @@ export const openDashboard = async (req, res) => {
     await getWebSessionFromRequest(req);
     return res.redirect(302, "/profile.html");
   } catch {
-    return res.redirect(302, "/web/login");
+    const { redirectUrl, flowCookie } = buildWebAuthPageStartResult("/authenticate.html");
+    res.setHeader("Set-Cookie", buildFlowCookieHeader(flowCookie));
+    return res.redirect(302, redirectUrl);
   }
 };
 
