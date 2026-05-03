@@ -1,6 +1,5 @@
 import ImageKit from "imagekit";
 import config from "../config/connection.js";
-import ApiError from "./api-error.js";
 
 let imageKitClient = null;
 
@@ -35,9 +34,7 @@ export const uploadImageToImageKit = async (file, fileNamePrefix = "profile") =>
   const client = getImageKitClient();
 
   if (!client) {
-    throw ApiError.badRequest(
-      "ImageKit is not configured. Add IMAGEKIT_PUBLIC_KEY, IMAGEKIT_PRIVATE_KEY and IMAGEKIT_URL_ENDPOINT.",
-    );
+    return null;
   }
 
   const safeName = `${fileNamePrefix}-${Date.now()}-${file.originalname.replace(/\s+/g, "-")}`;

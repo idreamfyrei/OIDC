@@ -109,74 +109,90 @@
       import { apiRequest } from "/lib/api.js";
 
       const params = new URLSearchParams(window.location.search);
-      const loginLink = document.getElementById("loginLink");
-      const signupInfo = document.getElementById("signupInfo");
-      loginLink.href = `/authenticate.html?${params.toString()}`;
+      const oauthReady = (() => {
+        const challenge = params.get("code_challenge") || "";
+        return (
+          Boolean(params.get("client_id")?.trim()) &&
+          Boolean(params.get("redirect_uri")?.trim()) &&
+          Boolean(params.get("state")?.trim()) &&
+          Boolean(params.get("nonce")?.trim()) &&
+          challenge.length >= 43 &&
+          challenge.length <= 128 &&
+          params.get("code_challenge_method") === "S256"
+        );
+      })();
+      if (!oauthReady) {
+        window.location.replace("/signup");
+      } else {
+        const loginLink = document.getElementById("loginLink");
+        const signupInfo = document.getElementById("signupInfo");
+        loginLink.href = `/authenticate.html?${params.toString()}`;
 
-      const clientName = params.get("client_name") || params.get("client_id") || "this app";
-      signupInfo.textContent = `Sign up to continue with ${clientName}.`;
+        const clientName = params.get("client_name") || params.get("client_id") || "this app";
+        signupInfo.textContent = `Sign up to continue with ${clientName}.`;
 
-      const splitFullName = (value) => {
-        const cleaned = value.trim().replace(/\s+/g, " ");
-        if (!cleaned) {
-          return { firstName: "", lastName: "" };
-        }
+        const splitFullName = (value) => {
+          const cleaned = value.trim().replace(/\s+/g, " ");
+          if (!cleaned) {
+            return { firstName: "", lastName: "" };
+          }
 
-        const parts = cleaned.split(" ");
-        if (parts.length === 1) {
-          return { firstName: parts[0], lastName: "" };
-        }
+          const parts = cleaned.split(" ");
+          if (parts.length === 1) {
+            return { firstName: parts[0], lastName: "" };
+          }
 
-        return {
-          firstName: parts.shift(),
-          lastName: parts.join(" "),
+          return {
+            firstName: parts.shift(),
+            lastName: parts.join(" "),
+          };
         };
-      };
 
-      const form = document.getElementById("signupForm");
-      wireAsyncForm({
-        form,
-        errorId: "error",
-        onSubmit: async () => {
-          if (form.password.value !== form.confirmPassword.value) {
-            throw new Error("Passwords do not match.");
-          }
+        const form = document.getElementById("signupForm");
+        wireAsyncForm({
+          form,
+          errorId: "error",
+          onSubmit: async () => {
+            if (form.password.value !== form.confirmPassword.value) {
+              throw new Error("Passwords do not match.");
+            }
 
-          const { firstName, lastName } = splitFullName(form.fullName.value);
+            const { firstName, lastName } = splitFullName(form.fullName.value);
 
-          if (!firstName) {
-            throw new Error("Please enter your name.");
-          }
+            if (!firstName) {
+              throw new Error("Please enter your name.");
+            }
 
-          const formData = new FormData();
-          formData.set("firstName", firstName);
-          formData.set("lastName", lastName);
-          formData.set("email", form.email.value.trim());
-          formData.set("password", form.password.value);
-          formData.set("client_id", params.get("client_id") || "");
-          formData.set("redirect_uri", params.get("redirect_uri") || "");
-          formData.set("response_type", params.get("response_type") || "code");
-          formData.set("scope", params.get("scope") || "openid profile email");
-          formData.set("state", params.get("state") || "");
-          formData.set("nonce", params.get("nonce") || "");
-          formData.set("code_challenge", params.get("code_challenge") || "");
-          formData.set(
-            "code_challenge_method",
-            params.get("code_challenge_method") || "S256",
-          );
+            const formData = new FormData();
+            formData.set("firstName", firstName);
+            formData.set("lastName", lastName);
+            formData.set("email", form.email.value.trim());
+            formData.set("password", form.password.value);
+            formData.set("client_id", params.get("client_id") || "");
+            formData.set("redirect_uri", params.get("redirect_uri") || "");
+            formData.set("response_type", params.get("response_type") || "code");
+            formData.set("scope", params.get("scope") || "openid profile email");
+            formData.set("state", params.get("state") || "");
+            formData.set("nonce", params.get("nonce") || "");
+            formData.set("code_challenge", params.get("code_challenge") || "");
+            formData.set(
+              "code_challenge_method",
+              params.get("code_challenge_method") || "S256",
+            );
 
-          const profileFile = form.profileImage.files?.[0];
-          if (profileFile) {
-            formData.set("profileImage", profileFile);
-          }
+            const profileFile = form.profileImage.files?.[0];
+            if (profileFile) {
+              formData.set("profileImage", profileFile);
+            }
 
-          const data = await apiRequest("/accounts/register", {
-            method: "POST",
-            body: formData,
-          });
-          window.location.href = data.data.redirect_to;
-        },
-      });
+            const data = await apiRequest("/accounts/register", {
+              method: "POST",
+              body: formData,
+            });
+            window.location.href = data.data.redirect_to;
+          },
+        });
+      }
     </script>
   </body>
 </html>

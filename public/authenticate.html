@@ -71,40 +71,56 @@
       import { wireAsyncForm } from "/lib/forms.js";
 
       const params = new URLSearchParams(window.location.search);
-      const signupLink = document.getElementById("signupLink");
-      const requestInfo = document.getElementById("requestInfo");
+      const oauthReady = (() => {
+        const challenge = params.get("code_challenge") || "";
+        return (
+          Boolean(params.get("client_id")?.trim()) &&
+          Boolean(params.get("redirect_uri")?.trim()) &&
+          Boolean(params.get("state")?.trim()) &&
+          Boolean(params.get("nonce")?.trim()) &&
+          challenge.length >= 43 &&
+          challenge.length <= 128 &&
+          params.get("code_challenge_method") === "S256"
+        );
+      })();
+      if (!oauthReady) {
+        window.location.replace("/login");
+      } else {
+        const signupLink = document.getElementById("signupLink");
+        const requestInfo = document.getElementById("requestInfo");
 
-      signupLink.href = `/signup.html?${params.toString()}`;
-      requestInfo.textContent = `${params.get("client_name") || params.get("client_id") || "This app"} wants to continue with ${params.get("scope") || "openid profile email"}.`;
+        signupLink.href = `/signup.html?${params.toString()}`;
+        requestInfo.textContent = `${params.get("client_name") || params.get("client_id") || "This app"} wants to continue with ${params.get("scope") || "openid profile email"}.`;
 
-      const form = document.getElementById("loginForm");
-      wireAsyncForm({
-        form,
-        errorId: "error",
-        onSubmit: async () => {
-          const payload = {
-            email: form.email.value.trim(),
-            password: form.password.value,
-            client_id: params.get("client_id"),
-            redirect_uri: params.get("redirect_uri"),
-            response_type: params.get("response_type"),
-            scope: params.get("scope"),
-            state: params.get("state"),
-            nonce: params.get("nonce"),
-            code_challenge: params.get("code_challenge"),
-            code_challenge_method: params.get("code_challenge_method"),
-          };
+        const form = document.getElementById("loginForm");
+        wireAsyncForm({
+          form,
+          errorId: "error",
+          onSubmit: async () => {
+            const payload = {
+              email: form.email.value.trim(),
+              password: form.password.value,
+              client_id: params.get("client_id"),
+              redirect_uri: params.get("redirect_uri"),
+              response_type: params.get("response_type"),
+              scope: params.get("scope"),
+              state: params.get("state"),
+              nonce: params.get("nonce"),
+              code_challenge: params.get("code_challenge"),
+              code_challenge_method: params.get("code_challenge_method"),
+            };
 
-          const data = await apiRequest("/auth/sign-in", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          });
-          window.location.href = data.data.redirect_to;
-        },
-      });
+            const data = await apiRequest("/auth/sign-in", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            });
+            window.location.href = data.data.redirect_to;
+          },
+        });
+      }
     </script>
   </body>
 </html>
