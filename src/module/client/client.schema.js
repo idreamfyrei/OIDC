@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const tokenEndpointAuthMethodSchema = z.enum(["none", "client_secret_post"]);
+
 export const registerClientSchema = z.object({
   clientId: z
     .string()
@@ -13,7 +15,7 @@ export const registerClientSchema = z.object({
   redirectUris: z.array(z.string().trim().url()).min(1),
   backchannelLogoutUri: z.union([z.string().trim().url(), z.literal("")]).optional(),
   applicationType: z.enum(["web", "native"]),
-  tokenEndpointAuthMethod: z.literal("none").default("none").optional(),
+  tokenEndpointAuthMethod: tokenEndpointAuthMethodSchema.default("none").optional(),
 });
 
 export const clientIdParamSchema = z.object({
@@ -30,6 +32,7 @@ export const companyRegisterSchema = z.object({
   redirectUris: z.array(z.string().trim().url()).min(1),
   backchannelLogoutUri: z.union([z.string().trim().url(), z.literal("")]).optional(),
   applicationType: z.enum(["web", "native"]).default("web"),
+  tokenEndpointAuthMethod: tokenEndpointAuthMethodSchema.default("client_secret_post").optional(),
   clientId: z
     .string()
     .trim()

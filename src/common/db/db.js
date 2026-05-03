@@ -74,6 +74,7 @@ export const oauthClientsTable = pgTable(
     tokenEndpointAuthMethod: varchar("token_endpoint_auth_method", { length: 30 })
       .default("none")
       .notNull(),
+    clientSecretHash: text("client_secret_hash"),
     ownerUserId: uuid("owner_user_id").references(() => usersTable.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()),

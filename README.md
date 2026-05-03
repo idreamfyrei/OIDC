@@ -173,7 +173,7 @@ Current discovery shape:
   "subject_types_supported": ["public"],
   "id_token_signing_alg_values_supported": ["RS256"],
   "scopes_supported": ["openid", "profile", "email", "offline_access"],
-  "token_endpoint_auth_methods_supported": ["none"],
+  "token_endpoint_auth_methods_supported": ["none", "client_secret_post"],
   "claims_supported": [
     "sub",
     "name",
@@ -281,7 +281,7 @@ Used to request new access/ID tokens without re-authenticating.
 
 - `GET /clients` - Lists registered clients.
 - `GET /clients/:clientId` - Returns one client's public details.
-- `POST /clients/register` - Registers a new OAuth client (supports optional `backchannelLogoutUri`).
+- `POST /clients/register` - Registers a new OAuth client (supports `tokenEndpointAuthMethod` and optional `backchannelLogoutUri`).
 
 ### Web/BFF Demo
 

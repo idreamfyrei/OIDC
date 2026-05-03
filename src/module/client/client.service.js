@@ -29,6 +29,7 @@ const defaultClients = [
 ];
 
 const randomSuffix = () => crypto.randomBytes(4).toString("hex");
+const randomClientSecret = () => crypto.randomBytes(32).toString("base64url");
 
 const normalizeClientRow = (row) => ({
   client_id: row.clientId,
@@ -39,6 +40,7 @@ const normalizeClientRow = (row) => ({
   token_endpoint_auth_method: row.tokenEndpointAuthMethod,
   application_type: row.applicationType,
   owner_user_id: row.ownerUserId || null,
+  has_client_secret: Boolean(row.clientSecretHash),
   is_first_party: false,
 });
 
@@ -73,6 +75,28 @@ export const getClientOrThrow = async (clientId) => {
   return client;
 };
 
+export const verifyClientSecret = async (clientId, clientSecret) => {
+  const rows = await db
+    .select({
+      clientSecretHash: oauthClientsTable.clientSecretHash,
+      tokenEndpointAuthMethod: oauthClientsTable.tokenEndpointAuthMethod,
+    })
+    .from(oauthClientsTable)
+    .where(eq(oauthClientsTable.clientId, clientId))
+    .limit(1);
+
+  const row = rows[0];
+  if (!row) {
+    return false;
+  }
+
+  if (row.tokenEndpointAuthMethod !== "client_secret_post" || !row.clientSecretHash) {
+    return false;
+  }
+
+  return bcrypt.compare(clientSecret, row.clientSecretHash);
+};
+
 export const listClientsForOwner = async (ownerUserId) => {
   const rows = await db
     .select()
@@ -90,6 +114,10 @@ export const registerClientApplication = async (payload, options = {}) => {
     throw ApiError.conflict("That client_id is already in use.");
   }
 
+  const tokenEndpointAuthMethod = payload.tokenEndpointAuthMethod || "none";
+  const plainClientSecret = randomClientSecret();
+  const clientSecretHash = await bcrypt.hash(plainClientSecret, 12);
+
   const inserted = await db
     .insert(oauthClientsTable)
     .values({
@@ -99,12 +127,16 @@ export const registerClientApplication = async (payload, options = {}) => {
       redirectUris: JSON.stringify(payload.redirectUris),
       backchannelLogoutUri: payload.backchannelLogoutUri?.trim() || null,
       applicationType: payload.applicationType,
-      tokenEndpointAuthMethod: payload.tokenEndpointAuthMethod || "none",
+      tokenEndpointAuthMethod,
+      clientSecretHash,
       ownerUserId: options.ownerUserId || null,
     })
     .returning();
 
-  return normalizeClientRow(inserted[0]);
+  return {
+    ...normalizeClientRow(inserted[0]),
+    client_secret: plainClientSecret,
+  };
 };
 
 export const registerCompany = async (payload) => {
@@ -136,10 +168,22 @@ export const registerCompany = async (payload) => {
       redirectUris: payload.redirectUris,
       backchannelLogoutUri: payload.backchannelLogoutUri,
       applicationType: payload.applicationType,
+      tokenEndpointAuthMethod: payload.tokenEndpointAuthMethod,
       clientId: payload.clientId,
     },
     { ownerUserId: user.id },
   );
+
+  const defaultRedirectUri = client.redirect_uris[0];
+  const authorizeUrl = new URL("/authorize", config.issuer);
+  authorizeUrl.searchParams.set("client_id", client.client_id);
+  authorizeUrl.searchParams.set("redirect_uri", defaultRedirectUri);
+  authorizeUrl.searchParams.set("response_type", "code");
+  authorizeUrl.searchParams.set("scope", "openid profile email");
+  authorizeUrl.searchParams.set("state", "{state}");
+  authorizeUrl.searchParams.set("nonce", "{nonce}");
+  authorizeUrl.searchParams.set("code_challenge", "{code_challenge}");
+  authorizeUrl.searchParams.set("code_challenge_method", "S256");
 
   return {
     user: {
@@ -147,6 +191,15 @@ export const registerCompany = async (payload) => {
       email: user.email,
       name: [user.firstName, user.lastName].filter(Boolean).join(" ").trim(),
     },
-    client,
+    client: {
+      ...client,
+      client_secret: client.client_secret,
+    },
+    links: {
+      authorize_url_template: authorizeUrl.toString(),
+      token_endpoint: `${config.issuer}/oauth/token`,
+      discovery_document: `${config.issuer}/.well-known/openid-configuration`,
+      jwks_uri: `${config.issuer}/.well-known/jwks.json`,
+    },
   };
 };

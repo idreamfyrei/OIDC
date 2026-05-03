@@ -3,7 +3,7 @@ import ApiError from "../../common/utils/api-error.js";
 import { getJwks } from "../../common/utils/jwt.js";
 import { buildPkceChallenge } from "../../common/utils/pkce.js";
 import { buildUserProfile, findUserById } from "../account/account.repository.js";
-import { getClientByClientId } from "../client/client.service.js";
+import { getClientByClientId, verifyClientSecret } from "../client/client.service.js";
 import { authorizationCodeSchema, refreshTokenSchema } from "./oauth.schema.js";
 import {
   consumeAuthorizationCode,
@@ -48,7 +48,7 @@ export const getDiscoveryDocument = () => ({
   subject_types_supported: ["public"],
   id_token_signing_alg_values_supported: ["RS256"],
   scopes_supported: ["openid", "profile", "email", "offline_access"],
-  token_endpoint_auth_methods_supported: ["none"],
+  token_endpoint_auth_methods_supported: ["none", "client_secret_post"],
   claims_supported: [
     "sub",
     "name",
@@ -81,6 +81,27 @@ export const buildConsentRedirect = async (query, baseUrl = config.issuer) => {
 
 export const exchangeAuthorizationCode = async (payload) => {
   const parsed = authorizationCodeSchema.parse(payload);
+  const client = await getClientByClientId(parsed.client_id);
+
+  if (!client) {
+    throw createOauthError(400, "invalid_client", "Unknown client_id.");
+  }
+  if (client.token_endpoint_auth_method === "client_secret_post") {
+    if (!parsed.client_secret) {
+      throw createOauthError(401, "invalid_client", "client_secret is required for this client.");
+    }
+    const isValidSecret = await verifyClientSecret(client.client_id, parsed.client_secret);
+    if (!isValidSecret) {
+      throw createOauthError(401, "invalid_client", "Client authentication failed.");
+    }
+  } else if (parsed.client_secret) {
+    throw createOauthError(
+      400,
+      "invalid_request",
+      "client_secret must not be sent for public clients.",
+    );
+  }
+
   const codeRecord = await consumeAuthorizationCode(parsed.code);
 
   if (codeRecord.expiresAt.getTime() < Date.now()) {
@@ -93,12 +114,6 @@ export const exchangeAuthorizationCode = async (payload) => {
 
   if (codeRecord.redirectUri !== parsed.redirect_uri) {
     throw createOauthError(400, "invalid_grant", "redirect_uri does not match the authorization code.");
-  }
-
-  const client = await getClientByClientId(parsed.client_id);
-
-  if (!client) {
-    throw createOauthError(400, "invalid_client", "Unknown client_id.");
   }
   validateClientRedirectUri(client, parsed.redirect_uri);
 
@@ -152,6 +167,21 @@ export const exchangeRefreshToken = async (payload) => {
 
   if (!client) {
     throw createOauthError(400, "invalid_client", "Unknown client_id.");
+  }
+  if (client.token_endpoint_auth_method === "client_secret_post") {
+    if (!parsed.client_secret) {
+      throw createOauthError(401, "invalid_client", "client_secret is required for this client.");
+    }
+    const isValidSecret = await verifyClientSecret(client.client_id, parsed.client_secret);
+    if (!isValidSecret) {
+      throw createOauthError(401, "invalid_client", "Client authentication failed.");
+    }
+  } else if (parsed.client_secret) {
+    throw createOauthError(
+      400,
+      "invalid_request",
+      "client_secret must not be sent for public clients.",
+    );
   }
   const storedRefreshToken = await consumeRefreshToken(parsed.refresh_token);
 

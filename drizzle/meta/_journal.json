@@ -36,6 +36,20 @@
       "when": 1777540800000,
       "tag": "0004_add_backchannel_logout_uri",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1777753962868,
+      "tag": "0005_glossy_salo",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777804800000,
+      "tag": "0006_add_client_secret_hash",
+      "breakpoints": true
     }
   ]
 }
