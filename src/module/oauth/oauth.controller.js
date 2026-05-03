@@ -18,8 +18,7 @@ export const getJwks = async (req, res) => {
 
 export const authorize = async (req, res, next) => {
   try {
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
-    const redirectUrl = await buildConsentRedirect(req.query, baseUrl);
+    const redirectUrl = await buildConsentRedirect(req.query);
     return res.redirect(302, redirectUrl);
   } catch (error) {
     next(error);
