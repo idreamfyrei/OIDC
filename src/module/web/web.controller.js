@@ -27,6 +27,12 @@ export const startExternalLogin = async (req, res, next) => {
     const loginUrl = await buildExternalLoginRedirect(req.query);
     return res.redirect(302, loginUrl);
   } catch (error) {
+    if (error.oauthError) {
+      return res.status(error.statusCode || 400).json({
+        error: error.oauthError,
+        error_description: error.message,
+      });
+    }
     next(error);
   }
 };
@@ -47,7 +53,8 @@ export const startWebLogin = async (req, res, next) => {
 
 export const startWebLoginPage = async (req, res, next) => {
   try {
-    const { redirectUrl, flowCookie } = buildWebAuthPageStartResult("/authenticate.html");
+    const { redirectUrl, flowCookie } =
+      buildWebAuthPageStartResult("/authenticate.html");
     res.setHeader("Set-Cookie", buildFlowCookieHeader(flowCookie));
     return res.redirect(302, redirectUrl);
   } catch (error) {
@@ -57,7 +64,8 @@ export const startWebLoginPage = async (req, res, next) => {
 
 export const startWebSignupPage = async (req, res, next) => {
   try {
-    const { redirectUrl, flowCookie } = buildWebAuthPageStartResult("/signup.html");
+    const { redirectUrl, flowCookie } =
+      buildWebAuthPageStartResult("/signup.html");
     res.setHeader("Set-Cookie", buildFlowCookieHeader(flowCookie));
     return res.redirect(302, redirectUrl);
   } catch (error) {
@@ -70,7 +78,8 @@ export const openDashboard = async (req, res) => {
     await getWebSessionFromRequest(req);
     return res.redirect(302, "/profile.html");
   } catch {
-    const { redirectUrl, flowCookie } = buildWebAuthPageStartResult("/authenticate.html");
+    const { redirectUrl, flowCookie } =
+      buildWebAuthPageStartResult("/authenticate.html");
     res.setHeader("Set-Cookie", buildFlowCookieHeader(flowCookie));
     return res.redirect(302, redirectUrl);
   }
@@ -78,7 +87,10 @@ export const openDashboard = async (req, res) => {
 
 export const handleWebLoginCallback = async (req, res, next) => {
   try {
-    const { session } = await completeWebLoginCallback({ reqQuery: req.query, req });
+    const { session } = await completeWebLoginCallback({
+      reqQuery: req.query,
+      req,
+    });
     res.setHeader("Set-Cookie", [
       clearFlowCookieHeader(),
       buildWebSessionCookieHeader(session.sessionId),
