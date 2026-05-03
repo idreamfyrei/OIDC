@@ -12,3 +12,8 @@ export const signInSchema = z.object({
   code_challenge: z.string().trim().min(43).max(128),
   code_challenge_method: z.literal("S256"),
 });
+
+export const authenticateUserSchema = z.object({
+  email: z.string().trim().email(),
+  password: z.string().min(8).max(72),
+});

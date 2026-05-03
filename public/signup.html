@@ -22,7 +22,7 @@
             </p>
           </div>
 
-          <form class="stack" id="signupForm" enctype="multipart/form-data" novalidate>
+          <form class="stack" id="signupForm" novalidate>
             <div class="field">
               <label for="fullName">Full name</label>
               <input
@@ -74,11 +74,6 @@
                 autocomplete="new-password"
                 required
               />
-            </div>
-
-            <div class="field">
-              <label for="profileImage">Profile photo (optional)</label>
-              <input class="input" id="profileImage" name="profileImage" type="file" accept="image/*" />
             </div>
 
             <button class="button button-primary full-width" type="submit">
@@ -163,31 +158,27 @@
               throw new Error("Please enter your name.");
             }
 
-            const formData = new FormData();
-            formData.set("firstName", firstName);
-            formData.set("lastName", lastName);
-            formData.set("email", form.email.value.trim());
-            formData.set("password", form.password.value);
-            formData.set("client_id", params.get("client_id") || "");
-            formData.set("redirect_uri", params.get("redirect_uri") || "");
-            formData.set("response_type", params.get("response_type") || "code");
-            formData.set("scope", params.get("scope") || "openid profile email");
-            formData.set("state", params.get("state") || "");
-            formData.set("nonce", params.get("nonce") || "");
-            formData.set("code_challenge", params.get("code_challenge") || "");
-            formData.set(
-              "code_challenge_method",
-              params.get("code_challenge_method") || "S256",
-            );
-
-            const profileFile = form.profileImage.files?.[0];
-            if (profileFile) {
-              formData.set("profileImage", profileFile);
-            }
+            const payload = {
+              firstName,
+              lastName,
+              email: form.email.value.trim(),
+              password: form.password.value,
+              client_id: params.get("client_id") || "",
+              redirect_uri: params.get("redirect_uri") || "",
+              response_type: params.get("response_type") || "code",
+              scope: params.get("scope") || "openid profile email",
+              state: params.get("state") || "",
+              nonce: params.get("nonce") || "",
+              code_challenge: params.get("code_challenge") || "",
+              code_challenge_method: params.get("code_challenge_method") || "S256",
+            };
 
             const data = await apiRequest("/accounts/register", {
               method: "POST",
-              body: formData,
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
             });
             window.location.href = data.data.redirect_to;
           },

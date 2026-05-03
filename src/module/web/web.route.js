@@ -23,6 +23,7 @@ webRouter.get("/login", startWebLoginPage);
 webRouter.get("/signin", startWebLoginPage);
 webRouter.get("/signup", startWebSignupPage);
 webRouter.get("/login/callback", handleWebLoginCallback);
+webRouter.get("/web/login/callback", handleWebLoginCallback);
 webRouter.get("/dashboard", openDashboard);
 webRouter.get("/me", requireWebSession, getWebProfile);
 webRouter.get("/apps", requireWebSession, getWebApps);

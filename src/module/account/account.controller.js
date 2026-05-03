@@ -3,10 +3,7 @@ import { registerAccount } from "./account.service.js";
 
 export const createAccount = async (req, res, next) => {
   try {
-    const result = await registerAccount({
-      body: req.body,
-      file: req.file,
-    });
+    const result = await registerAccount(req.body);
 
     return ApiResponse.created(res, "Account created.", result);
   } catch (error) {

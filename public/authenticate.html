@@ -100,14 +100,14 @@
             const payload = {
               email: form.email.value.trim(),
               password: form.password.value,
-              client_id: params.get("client_id"),
-              redirect_uri: params.get("redirect_uri"),
-              response_type: params.get("response_type"),
-              scope: params.get("scope"),
-              state: params.get("state"),
-              nonce: params.get("nonce"),
-              code_challenge: params.get("code_challenge"),
-              code_challenge_method: params.get("code_challenge_method"),
+              client_id: params.get("client_id") || "",
+              redirect_uri: params.get("redirect_uri") || "",
+              response_type: params.get("response_type") || "code",
+              scope: params.get("scope") || "openid profile email",
+              state: params.get("state") || "",
+              nonce: params.get("nonce") || "",
+              code_challenge: params.get("code_challenge") || "",
+              code_challenge_method: params.get("code_challenge_method") || "S256",
             };
 
             const data = await apiRequest("/auth/sign-in", {

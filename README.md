@@ -48,8 +48,8 @@ This is not production authentication infrastructure. It is a practical learning
 | JWK / JWKS       | `node-jose`             |
 | Password hashing | `bcrypt`                |
 | Validation       | Zod                     |
-| Uploads          | Multer                  |
-| Image hosting    | ImageKit                |
+| Uploads          | Disabled for now        |
+| Image hosting    | Disabled for now        |
 
 ## Project Structure
 
@@ -274,8 +274,9 @@ Used to request new access/ID tokens without re-authenticating.
 
 ### User Account and Auth
 
-- `POST /accounts/register` - Creates a local user account.
+- `POST /accounts/register` - Creates a local user account and completes the auth UI flow.
 - `POST /auth/sign-in` - Signs in user credentials for the auth UI flow.
+- `POST /auth/user` - Authenticates credentials from another service and returns user claims.
 
 ### Client Management
 

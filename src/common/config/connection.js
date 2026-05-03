@@ -77,9 +77,16 @@ export const config = {
 
 if (config.clients.web.redirectUris.length === 0) {
   config.clients.web.redirectUris = unique([
+    config.webClientRedirectUri,
     `${issuer}/login/callback`,
+    `${issuer}/web/login/callback`,
     `${issuer}/callback.html`,
     `http://localhost:${config.port}/callback.html`,
+  ]);
+} else {
+  config.clients.web.redirectUris = unique([
+    ...config.clients.web.redirectUris,
+    config.webClientRedirectUri,
   ]);
 }
 
